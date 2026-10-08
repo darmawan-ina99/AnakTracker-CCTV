@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnakTracker - Dashboard</title>
+<style>
+  :root { --biru:#1E3A8A; --hijau:#16A34A; --merah:#DC2626; --abu:#6B7280; --bg:#F1F5F9; }
+  * { box-sizing:border-box; margin:0; padding:0; font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+  body { background:var(--bg); color:#1F2937; padding:12px; max-width:640px; margin:0 auto; }
+  h1 { font-size:20px; color:var(--biru); margin:8px 0 2px; }
+  .sub { font-size:12px; color:var(--abu); margin-bottom:12px; }
+  .card { background:#fff; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid #F1F5F6; font-size:14px; }
+  .row:last-child { border-bottom:none; }
+  .k { color:var(--abu); font-size:12px; }
+  .v { font-weight:600; text-align:right; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; }
+  .b-ping { background:#2563EB; } .b-aman { background:var(--hijau); }
+  .b-sos { background:var(--merah); animation:blink 1s infinite; }
+  .b-cctv { background:#7C3AED; }
+  @keyframes blink { 50% { opacity:.55; } }
+  #sosBanner { display:none; background:#FEE2E2; border:2px solid var(--merah); color:#7F1D1D;
+    border-radius:12px; padding:12px; font-weight:700; text-align:center; margin-bottom:12px; font-size:15px; }
+  #mapBox iframe { width:100%; height:280px; border:0; border-radius:10px; }
+  #fotoImg { width:100%; border-radius:10px; background:#111; min-height:60px; }
+  .noFoto { padding:18px; text-align:center; color:var(--abu); font-size:14px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:var(--abu); font-size:11px; text-transform:uppercase; padding:6px 4px; border-bottom:2px solid #E5E7EB; }
+  td { padding:7px 4px; border-bottom:1px solid #F3F4F6; }
+  .btn { display:block; width:100%; padding:12px; border:0; border-radius:10px; background:var(--biru);
+    color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+  .btn:active { opacity:.85; }
+  #status { text-align:center; font-size:12px; color:var(--abu); padding:6px; }
+  footer { text-align:center; font-size:11px; color:#9CA3AF; padding:10px; }
+  .gm { color:var(--biru); text-decoration:none; font-weight:600; font-size:14px; display:inline-block; margin-top:8px; }
+</style>
+</head>
+<body>
+<h1>👧 AnakTracker</h1>
+<div class="sub">Dashboard orang tua — lokasi & CCTV diperbarui otomatis tiap 1 menit</div>
+
+<div class="card" id="tokenCard" style="display:none;text-align:center">
+  <div style="font-size:15px;font-weight:700;color:var(--biru);margin-bottom:8px">🔐 Masukkan Kode Akses</div>
+  <div style="font-size:12px;color:var(--abu);margin-bottom:10px">Kode rahasia orang tua (sama dengan yang di HP anak). Disimpan sekali di browser ini.</div>
+  <input id="tokenInput" type="password" placeholder="Kode akses"
+    style="width:100%;padding:12px;border:1px solid #D1D5DB;border-radius:10px;font-size:15px;margin-bottom:8px">
+  <button class="btn" onclick="setToken(document.getElementById('tokenInput').value)">Buka Dashboard</button>
+</div>
+
+<div id="sosBanner">🚨 SOS! Anak menekan tombol darurat — hubungi segera!</div>
+
+<div class="card" id="statusCard">
+  <div class="row"><span class="k">STATUS TERBARU</span><span class="v" id="evBadge">-</span></div>
+  <div class="row"><span class="k">Waktu laporan</span><span class="v" id="waktu">-</span></div>
+  <div class="row"><span class="k">Koordinat</span><span class="v" id="koord">-</span></div>
+  <div class="row"><span class="k">Akurasi GPS</span><span class="v" id="akurasi">-</span></div>
+  <div class="row"><span class="k">Umur data lokasi</span><span class="v" id="umur">-</span></div>
+  <div class="row"><span class="k">Baterai HP</span><span class="v" id="baterai">-</span></div>
+  <div class="row"><span class="k">HP anak</span><span class="v" id="device">-</span></div>
+</div>
+
+<div class="card" id="mapBox">
+  <iframe id="peta" src="about:blank" title="Peta lokasi"></iframe>
+  <a class="gm" id="gmLink" href="#" target="_blank">📍 Buka di Google Maps</a>
+</div>
+
+<div class="card">
+  <div class="row" style="border:none"><span class="k">📸 FOTO CCTV TERAKHIR</span><span class="v" id="fotoWaktu" style="font-size:12px">-</span></div>
+  <div id="fotoWrap" class="noFoto">Belum ada foto terkirim</div>
+</div>
+
+<div class="card">
+  <div class="row" style="border:none"><span class="k">🕘 RIWAYAT LOKASI (25 terakhir)</span></div>
+  <table>
+    <thead><tr><th>Waktu</th><th>Status</th><th>Baterai</th></tr></thead>
+    <tbody id="riwayat"></tbody>
+  </table>
+</div>
+
+<button class="btn" onclick="muat()">🔄 Perbarui Sekarang</button>
+<div id="status">Memuat data…</div>
+
+<footer>AnakTracker V2.1 (GitHub) — <a href="#" onclick="localStorage.removeItem('atk_token');location.reload()" style="color:#6B7280">ganti kode akses</a></footer>
+
+<script>
+const ENDPOINT = "https://superagent-e5dc0f54.base44.app/functions/anakTrack";
+let TOKEN = localStorage.getItem("atk_token") || "";
+
+function setToken(t) {
+  TOKEN = t.trim();
+  localStorage.setItem("atk_token", TOKEN);
+  muat();
+}
+
+const fmtWIB = (iso) => {
+  if (!iso) return "-";
+  try {
+    return new Date(iso).toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta", day: "2-digit", month: "short",
+      hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch (e) { return iso; }
+};
+
+function cekToken() {
+  const kartu = document.getElementById("tokenCard");
+  if (!TOKEN) {
+    kartu.style.display = "block";
+    document.getElementById("status").textContent = "Masukkan kode akses untuk melihat data";
+    return false;
+  }
+  kartu.style.display = "none";
+  return true;
+}
+
+async function muat() {
+  const st = document.getElementById("status");
+  if (!cekToken()) return;
+  st.textContent = "Memuat data…";
+  try {
+    const r = await fetch(ENDPOINT, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get", payload: { token: TOKEN } })
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.message || "gagal");
+
+    const locs = d.locations || [];
+    const foto = d.photo;
+    const terakhir = locs[0];
+
+    document.getElementById("sosBanner").style.display =
+      terakhir && terakhir.event_type === "sos" ? "block" : "none";
+
+    if (terakhir) {
+      const b = document.getElementById("evBadge");
+      const ev = terakhir.event_type || "ping";
+      b.textContent = ({ ping:"AKTIF", aman:"AKU AMAN", sos:"SOS!", cctv:"CCTV" })[ev] || ev.toUpperCase();
+      b.className = "badge b-" + ev;
+      document.getElementById("waktu").textContent = fmtWIB(terakhir.created_date);
+      const lat = Number(terakhir.latitude), lng = Number(terakhir.longitude);
+      document.getElementById("koord").textContent = lat + ", " + lng;
+      document.getElementById("akurasi").textContent = terakhir.accuracy ? "±" + Math.round(terakhir.accuracy) + " m" : "-";
+      const um = terakhir.fix_age_menit;
+      document.getElementById("umur").textContent = (um == null || um < 0) ? "-" : um + " menit lalu";
+      document.getElementById("baterai").textContent = terakhir.battery >= 0 ? terakhir.battery + "%" : "-";
+      document.getElementById("device").textContent = terakhir.device_info || "-";
+      if (lat || lng) {
+        const dLng = 0.004, dLat = 0.002;
+        document.getElementById("peta").src =
+          "https://www.openstreetmap.org/export/embed.html?bbox=" + (lng-dLng) + "%2C" + (lat-dLat) +
+          "%2C" + (lng+dLng) + "%2C" + (lat+dLat) + "&layer=mapnik&marker=" + lat + "%2C" + lng;
+        document.getElementById("gmLink").href = "https://maps.google.com/?q=" + lat + "," + lng;
+      }
+    }
+
+    const fw = document.getElementById("fotoWrap");
+    if (foto && foto.photo_base64) {
+      document.getElementById("fotoWaktu").textContent = fmtWIB(foto.created_date);
+      fw.className = "";
+      fw.innerHTML = '<img id="fotoImg" alt="Foto CCTV">';
+      const img = document.getElementById("fotoImg");
+      img.src = "data:image/jpeg;base64," + foto.photo_base64;
+      img.onerror = () => { fw.className = "noFoto"; fw.textContent = "Foto rusak/belum valid"; };
+    } else {
+      document.getElementById("fotoWaktu").textContent = "-";
+      fw.className = "noFoto"; fw.textContent = "Belum ada foto terkirim";
+    }
+
+    const tb = document.getElementById("riwayat");
+    tb.innerHTML = locs.map(l => {
+      const ev = l.event_type || "ping";
+      const lbl = ({ ping:"Aktif", aman:"Aku aman", sos:"SOS!", cctv:"CCTV" })[ev] || ev;
+      const cls = ev === "sos" ? 'style="color:#DC2626;font-weight:700"' : "";
+      return "<tr><td>" + fmtWIB(l.created_date) + "</td><td " + cls + ">" + lbl +
+             "</td><td>" + (l.battery >= 0 ? l.battery + "%" : "-") + "</td></tr>";
+    }).join("");
+
+    st.textContent = "Terakhir diperbarui: " + fmtWIB(new Date().toISOString());
+  } catch (e) {
+    const msg = String(e.message || e);
+    if (msg.indexOf("token") >= 0) {
+      localStorage.removeItem("atk_token"); TOKEN = "";
+      cekToken();
+      document.getElementById("tokenInput").placeholder = "Kode salah, coba lagi";
+    } else {
+      st.textContent = "Gagal memuat: " + msg + " — coba tombol perbarui";
+    }
+  }
+}
+
+muat();
+setInterval(muat, 60000);
+</script>
+</body>
+</html>

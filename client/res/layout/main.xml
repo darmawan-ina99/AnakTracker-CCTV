@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:padding="24dp"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="AnakTracker"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#1E3A8A"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Menyiapkan..."
+        android:textSize="16sp"
+        android:textColor="#374151"
+        android:gravity="center"
+        android:layout_marginTop="24dp"
+        android:padding="16dp"
+        android:background="#F3F4F6" />
+
+    <Button
+        android:id="@+id/btnAman"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="AKU AMAN"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginTop="40dp"
+        android:padding="20dp"
+        android:backgroundTint="#16A34A"
+        android:textColor="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnSos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SOS !!!"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:padding="20dp"
+        android:backgroundTint="#DC2626"
+        android:textColor="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnCctv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BUKA CCTV"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:padding="20dp"
+        android:backgroundTint="#2563EB"
+        android:textColor="#FFFFFF" />
+
+    <TextView
+        android:id="@+id/tvInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="13sp"
+        android:textColor="#6B7280"
+        android:layout_marginTop="32dp"
+        android:gravity="center" />
+
+</LinearLayout>
