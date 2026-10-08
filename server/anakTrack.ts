@@ -12,7 +12,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
   // Token rahasia: HARUS sama dengan Config.SECRET_TOKEN di HP anak
-  const SECRET = "GANTI-DENGAN-KODE-RAHASIA-KAMU";
+  const SECRET = "ATK-Sriamur-7K2m9Q4x";
   const jsonHeaders = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -43,8 +43,9 @@ Deno.serve(async (req) => {
   const action = body?.action;
   const p = body?.payload || {};
 
-  // Cek token anti data palsu
-  if (p.token !== SECRET) {
+  // Cek token anti data palsu (spasi diabaikan, huruf besar/kecil diabaikan)
+  const masuk = String(p.token || "").replace(/\s+/g, "").toLowerCase();
+  if (masuk !== SECRET) {
     return reply({ success: false, message: "token salah" }, 403);
   }
 
