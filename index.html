@@ -210,12 +210,12 @@ async function muat() {
     }
 
     const fw = document.getElementById("fotoWrap");
-    if (foto && foto.photo_base64) {
+    if (foto && (foto.photo_url || foto.photo_base64)) {
       document.getElementById("fotoWaktu").textContent = fmtWIB(foto.created_date);
       fw.className = "";
       fw.innerHTML = '<img id="fotoImg" alt="Foto CCTV">';
       const img = document.getElementById("fotoImg");
-      img.src = "data:image/jpeg;base64," + foto.photo_base64;
+      img.src = foto.photo_url || ("data:image/jpeg;base64," + foto.photo_base64);
       img.onerror = () => { fw.className = "noFoto"; fw.textContent = "Foto rusak/belum valid"; };
     } else {
       document.getElementById("fotoWaktu").textContent = "-";
