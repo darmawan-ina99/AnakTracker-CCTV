@@ -111,7 +111,7 @@ const fmtWIB = (iso) => {
   try {
     let s = String(iso);
     // ISO tanpa zona waktu dianggap UTC (server menyimpan UTC)
-    if (!/[Z+\-]\d{0,2}:?\d{2}$/.test(s)) s += "Z";
+    if (!s.endsWith("Z") && !/[+\-]\d{2}:?\d{2}$/.test(s)) s += "Z";
     return new Date(s).toLocaleString("id-ID", {
       timeZone: "Asia/Jakarta", day: "2-digit", month: "short",
       hour: "2-digit", minute: "2-digit", second: "2-digit" });
