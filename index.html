@@ -89,6 +89,14 @@
 <footer>AnakTracker V2.2.1 — <a href="#" onclick="try{localStorage.removeItem('atk_token')}catch(e){};TOKEN='';document.getElementById('tokenCard').style.display='block';muat()" style="color:#6B7280">ganti kode akses</a></footer>
 
 <script>
+window.onerror = function (msg) {
+  try {
+    var st = document.getElementById("status");
+    if (st) st.textContent = "ERROR: " + msg;
+  } catch (e) {}
+};
+document.title = "JS-AKTIF";
+
 const ENDPOINT = "https://superagent-e5dc0f54.base44.app/functions/anakTrack";
 let TOKEN = "";
 try { TOKEN = localStorage.getItem("atk_token") || ""; } catch (e) {}
