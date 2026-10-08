@@ -64,6 +64,9 @@ public class TrackerService extends Service {
     private void jadwalkan() {
         if (sudahDijadwalkan) return; // FIX V2.1: cukup satu timer
         sudahDijadwalkan = true;
+        // V2.2: cek perintah "Lihat Anak" dari orang tua tiap 60 detik
+        cekPerintah();
+        handler.postDelayed(pollPerintah, 60000L);
         if (tick != null) handler.removeCallbacks(tick);
         tick = new Runnable() {
             @Override
@@ -73,6 +76,36 @@ public class TrackerService extends Service {
             }
         };
         handler.postDelayed(tick, Config.INTERVAL_MENIT * 60 * 1000L);
+    }
+
+    // ==== CEK PERINTAH DARI ORANG TUA (V2.2: tombol Lihat Anak) ====
+    private Runnable pollPerintah = new Runnable() {
+        @Override public void run() {
+            cekPerintah();
+            handler.postDelayed(this, 60000L);
+        }
+    };
+
+    private void cekPerintah() {
+        new Thread() {
+            @Override public void run() {
+                try {
+                    JSONObject payload = new JSONObject();
+                    payload.put("child_id", Config.CHILD_ID);
+                    payload.put("token", Config.SECRET_TOKEN);
+                    JSONObject body = new JSONObject();
+                    body.put("action", "pollcmd");
+                    body.put("payload", payload);
+                    String resp = httpPost(body);
+                    if (resp != null && resp.contains("\"cmd\":\"photo\"")) {
+                        Intent i = new Intent(TrackerService.this, CameraActivity.class);
+                        i.putExtra("auto", true);
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    }
+                } catch (Exception e) { /* coba lagi siklus berikutnya */ }
+            }
+        }.start();
     }
 
     // ==== AMBIL LOKASI ====

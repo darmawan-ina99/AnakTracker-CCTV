@@ -4,7 +4,7 @@ Aplikasi pelacak anak untuk orang tua: HP anak mengirim lokasi berkala + foto CC
 
 ## Komponen
 
-1. `client/` — aplikasi Android (AIDE, Java) untuk HP anak. Versi 2.1.
+1. `client/` — aplikasi Android (AIDE, Java) untuk HP anak. Versi 2.2.
    - Kirim lokasi tiap 5 menit (ping), tombol AKU AMAN, tombol SOS.
    - Mode CCTV: foto berkala via kamera depan (base64, auto-prune max 30 di server).
    - Efisien baterai: satu timer, fallback GPS 90 detik, satu laporan per siklus.

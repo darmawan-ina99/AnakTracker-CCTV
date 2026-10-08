@@ -65,6 +65,11 @@
   <a class="gm" id="gmLink" href="#" target="_blank">📍 Buka di Google Maps</a>
 </div>
 
+<div class="card" style="text-align:center">
+  <button class="btn" id="btnLihat" style="background:#7C3AED;font-size:16px" onclick="lihatAnak()">📸 LIHAT ANAK SEKARANG</button>
+  <div id="lihatStatus" style="font-size:13px;color:var(--abu);padding:8px 2px 0">Tekan untuk minta HP anak mengambil foto langsung</div>
+</div>
+
 <div class="card">
   <div class="row" style="border:none"><span class="k">📸 FOTO CCTV TERAKHIR</span><span class="v" id="fotoWaktu" style="font-size:12px">-</span></div>
   <div id="fotoWrap" class="noFoto">Belum ada foto terkirim</div>
@@ -81,7 +86,7 @@
 <button class="btn" onclick="muat()">🔄 Perbarui Sekarang</button>
 <div id="status">Memuat data…</div>
 
-<footer>AnakTracker V2.1 (GitHub) — <a href="#" onclick="localStorage.removeItem('atk_token');location.reload()" style="color:#6B7280">ganti kode akses</a></footer>
+<footer>AnakTracker V2.1 — jaga kerahasiaan link ini</footer>
 
 <script>
 const ENDPOINT = "https://superagent-e5dc0f54.base44.app/functions/anakTrack";
@@ -101,6 +106,56 @@ const fmtWIB = (iso) => {
       hour: "2-digit", minute: "2-digit", second: "2-digit" });
   } catch (e) { return iso; }
 };
+
+async function lihatAnak() {
+  if (!cekToken()) return;
+  const btn = document.getElementById("btnLihat");
+  const st = document.getElementById("lihatStatus");
+  btn.disabled = true;
+  btn.style.opacity = .6;
+  st.textContent = "Mengirim perintah ke HP anak…";
+  try {
+    const r = await fetch(ENDPOINT, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "request_photo", payload: { token: TOKEN } })
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.message || "gagal");
+  } catch (e) {
+    st.textContent = "Gagal mengirim perintah: " + (e.message || e);
+    btn.disabled = false; btn.style.opacity = 1;
+    return;
+  }
+  // tunggu foto: cek tiap 10 detik, maks 2 menit
+  let sisa = 12;
+  const mulai = Date.now();
+  st.textContent = "⏳ Menunggu HP anak mengambil foto…";
+  const poll = setInterval(async () => {
+    sisa--;
+    try {
+      const r = await fetch(ENDPOINT, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "get", payload: { token: TOKEN } })
+      });
+      const d = await r.json();
+      const ft = d.photo && d.photo.created_date ? new Date(d.photo.created_date).getTime() : 0;
+      if (ft > mulai) {
+        clearInterval(poll);
+        await muat();
+        st.textContent = "✅ Foto terbaru diterima — lihat di bawah";
+        btn.disabled = false; btn.style.opacity = 1;
+        return;
+      }
+    } catch (e) { /* lanjut polling */ }
+    if (sisa <= 0) {
+      clearInterval(poll);
+      st.textContent = "⚠️ HP anak tidak merespons dalam 2 menit. Pastikan aplikasinya aktif & online.";
+      btn.disabled = false; btn.style.opacity = 1;
+    } else {
+      st.textContent = "⏳ Menunggu HP anak… (" + (sisa * 10) + " detik)";
+    }
+  }, 10000);
+}
 
 function cekToken() {
   const kartu = document.getElementById("tokenCard");
@@ -178,14 +233,7 @@ async function muat() {
 
     st.textContent = "Terakhir diperbarui: " + fmtWIB(new Date().toISOString());
   } catch (e) {
-    const msg = String(e.message || e);
-    if (msg.indexOf("token") >= 0) {
-      localStorage.removeItem("atk_token"); TOKEN = "";
-      cekToken();
-      document.getElementById("tokenInput").placeholder = "Kode salah, coba lagi";
-    } else {
-      st.textContent = "Gagal memuat: " + msg + " — coba tombol perbarui";
-    }
+    st.textContent = "Gagal memuat: " + (e.message || e) + " — coba tombol perbarui";
   }
 }
 

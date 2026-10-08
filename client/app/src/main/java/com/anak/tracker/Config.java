@@ -16,6 +16,9 @@ public class Config {
     // (di sisi OkTa). Ini pencegah orang luar kirim lokasi/foto palsu.
     public static final String SECRET_TOKEN = "GANTI-DENGAN-KODE-RAHASIA-KAMU";
 
+    // Cek perintah "Lihat Anak" dari orang tua (detik) - V2.2
+    public static final int POLL_PERINTAH_DETIK = 60;
+
     // Interval kirim lokasi otomatis (menit)
     public static final int INTERVAL_MENIT = 5;
 
