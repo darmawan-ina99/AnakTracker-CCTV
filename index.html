@@ -41,8 +41,8 @@
 <div class="sub">Dashboard orang tua — lokasi & CCTV diperbarui otomatis tiap 1 menit</div>
 
 <div class="card" id="tokenCard" style="display:none;text-align:center">
-  <div style="font-size:15px;font-weight:700;color:var(--biru);margin-bottom:8px">🔐 Masukkan Kode Akses</div>
-  <div style="font-size:12px;color:var(--abu);margin-bottom:10px">Kode rahasia orang tua (sama dengan yang di HP anak). Disimpan sekali di browser ini.</div>
+  <div style="font-size:15px;font-weight:700;color:#1E3A8A;margin-bottom:8px">🔐 Masukkan Kode Akses</div>
+  <div style="font-size:12px;color:#6B7280;margin-bottom:10px">Kode rahasia orang tua (sama dengan yang di HP anak). Disimpan sekali di browser ini.</div>
   <input id="tokenInput" type="password" placeholder="Kode akses"
     style="width:100%;padding:12px;border:1px solid #D1D5DB;border-radius:10px;font-size:15px;margin-bottom:8px">
   <button class="btn" onclick="setToken(document.getElementById('tokenInput').value)">Buka Dashboard</button>
@@ -86,15 +86,16 @@
 <button class="btn" onclick="muat()">🔄 Perbarui Sekarang</button>
 <div id="status">Memuat data…</div>
 
-<footer>AnakTracker V2.1 — jaga kerahasiaan link ini</footer>
+<footer>AnakTracker V2.2.1 — <a href="#" onclick="try{localStorage.removeItem('atk_token')}catch(e){};TOKEN='';document.getElementById('tokenCard').style.display='block';muat()" style="color:#6B7280">ganti kode akses</a></footer>
 
 <script>
 const ENDPOINT = "https://superagent-e5dc0f54.base44.app/functions/anakTrack";
-let TOKEN = localStorage.getItem("atk_token") || "";
+let TOKEN = "";
+try { TOKEN = localStorage.getItem("atk_token") || ""; } catch (e) {}
 
 function setToken(t) {
-  TOKEN = t.trim();
-  localStorage.setItem("atk_token", TOKEN);
+  TOKEN = (t || "").trim();
+  try { localStorage.setItem("atk_token", TOKEN); } catch (e) {}
   muat();
 }
 
