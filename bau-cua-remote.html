@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel Bau Cua Remote</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+  body { background: #0f1220; color: #eee; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 12px 40px; }
+  h1 { font-size: 1.15rem; margin: 6px 0 2px; color: #ffd54a; }
+  .sub { color: #8a8fb5; font-size: .8rem; margin-bottom: 18px; }
+  .card { background: #181c30; border: 1px solid #2a2f4a; border-radius: 14px; padding: 18px; width: 100%; max-width: 420px; margin-bottom: 16px; }
+  .row { display: flex; gap: 10px; justify-content: center; margin-bottom: 14px; }
+  select { background: #232842; color: #fff; border: 1px solid #3a4066; border-radius: 10px; padding: 14px; font-size: 1.5rem; width: 88px; text-align: center; }
+  select:focus { outline: 2px solid #ffd54a; }
+  button { background: #ffd54a; color: #1a1a1a; font-weight: 700; border: 0; border-radius: 10px; padding: 14px; font-size: 1rem; width: 100%; cursor: pointer; }
+  button:active { transform: scale(.98); }
+  button.ghost { background: #232842; color: #aab; margin-top: 10px; }
+  .preset { display: flex; gap: 8px; margin-bottom: 12px; }
+  .preset button { background: #232842; color: #cdd; font-size: .85rem; padding: 10px 6px; }
+  .preset button.on { background: #ffd54a; color: #1a1a1a; }
+  #status { margin-top: 12px; text-align: center; font-size: .85rem; color: #8a8fb5; min-height: 1.2em; }
+  #status.ok { color: #7ee787; }
+  #status.err { color: #ff7b72; }
+  .lbl { font-size: .75rem; color: #8a8fb5; text-align: center; margin-bottom: 8px; }
+  hr { border: 0; border-top: 1px solid #2a2f4a; margin: 14px 0; }
+</style>
+</head>
+<body>
+<h1>🎲 Bau Cua Remote</h1>
+<div class="sub">Kontrol dadu BauCua2028 (Firebase) + ChinChiro (Supabase)</div>
+
+<div class="card">
+  <div class="lbl">HASIL PAKSA (DICE 1–3)</div>
+  <div class="row">
+    <select id="d1"></select>
+    <select id="d2"></select>
+    <select id="d3"></select>
+  </div>
+  <div class="preset">
+    <button onclick="preset(4,5,6)">4·5·6</button>
+    <button onclick="preset(1,1,1)">1·1·1</button>
+    <button onclick="preset(6,6,6)">6·6·6</button>
+  </div>
+  <button onclick="kirim()">KIRIM HASIL</button>
+  <button class="ghost" onclick="natural()">NATURAL (hapus paksaan)</button>
+  <div id="status"></div>
+</div>
+
+<div class="card">
+  <div class="lbl">MODE CHINCHIRO (Supabase dice_control)</div>
+  <div class="preset" style="flex-wrap: wrap;">
+    <button onclick="modeChin('custom')">custom (pakai dadu di atas)</button>
+    <button onclick="modeChin('shigoro')">shigoro</button>
+    <button onclick="modeChin('pinzoro')">pinzoro</button>
+    <button onclick="modeChin('stop')">stop/natural</button>
+  </div>
+</div>
+
+<script>
+const FB = "https://bau-cua99-default-rtdb.asia-southeast1.firebasedatabase.app";
+const SUPA = "https://whtsromktkymksuvagrw.supabase.co/rest/v1/dice_control?id=eq.1";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndodHNyb21rdGt5bWtzdXZhZ3J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNTMzMTIsImV4cCI6MjEwNjkyOTMxMn0.Ey3dgYFJP0rI57eBkNtFgJjl_Qf-KI0H7dpfD_t4Kos";
+const diceSel = [d1, d2, d3];
+for (const s of diceSel) {
+  for (let v = 1; v <= 6; v++) {
+    const o = document.createElement("option");
+    o.value = v; o.textContent = v;
+    s.appendChild(o);
+  }
+  s.value = 1 + diceSel.indexOf(s);
+}
+function st(msg, cls) { status.textContent = msg; status.className = cls || ""; }
+function preset(a, b, c) { d1.value = a; d2.value = b; d3.value = c; }
+
+async function kirim() {
+  st("mengirim...");
+  try {
+    const body = JSON.stringify({ dice1: +d1.value, dice2: +d2.value, dice3: +d3.value });
+    const r = await fetch(FB + "/Dice.json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: body });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    st("✓ dikirim: " + d1.value + d2.value + d3.value + " — buka piring di game untuk lihat", "ok");
+  } catch (e) { st("✗ gagal: " + e.message, "err"); }
+}
+
+async function natural() {
+  st("menghapus paksaan...");
+  try {
+    const r = await fetch(FB + "/Dice.json", { method: "DELETE" });
+    if (!r.ok && r.status !== 200) throw new Error("HTTP " + r.status);
+    st("✓ dice natural kembali", "ok");
+  } catch (e) { st("✗ gagal: " + e.message, "err"); }
+}
+
+async function modeChin(mode) {
+  st("set mode supabase: " + mode);
+  const val = { mode: mode, updated_at: new Date().toISOString() };
+  if (mode === "custom") { val.d1 = +d1.value; val.d2 = +d2.value; val.d3 = +d3.value; }
+  else { val.d1 = 4; val.d2 = 5; val.d3 = 6; }
+  try {
+    const r = await fetch(SUPA, {
+      method: "PATCH",
+      headers: { "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+      body: JSON.stringify(val)
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    st("✓ supabase mode = " + mode, "ok");
+  } catch (e) { st("✗ supabase gagal: " + e.message + " (atur manual di dashboard bila perlu)", "err"); }
+}
+</script>
+</body>
+</html>
